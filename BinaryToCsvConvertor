@@ -1,0 +1,55 @@
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+
+public class BinaryToCsvConverter {
+
+    public static void main(String[] args) {
+        String inputFilePath = "input.bin";
+        String outputFilePath = "output.csv";
+
+        try {
+            Path inputPath = Paths.get(inputFilePath);
+            Path outputPath = Paths.get(outputFilePath);
+
+            try (FileChannel channel = FileChannel.open(inputPath, StandardOpenOption.READ);
+                 BufferedWriter writer = Files.newBufferedWriter(outputPath, StandardCharsets.UTF_8)) {
+
+                long fileSize = channel.size();
+                int bufferSize = 8192; // Adjust the buffer size as per your requirements
+
+                ByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, fileSize);
+
+                StringBuilder csvData = new StringBuilder();
+                byte[] lineSeparator = System.lineSeparator().getBytes();
+
+                for (int position = 0; position < fileSize; position += bufferSize) {
+                    int remaining = (int) Math.min(bufferSize, fileSize - position);
+                    byte[] chunk = new byte[remaining];
+                    buffer.get(chunk);
+
+                    csvData.append(convertToCsv(chunk));
+                    csvData.append(new String(lineSeparator, StandardCharsets.UTF_8));
+
+                    buffer.position(position + remaining);
+                }
+
+                writer.write(csvData.toString());
+            }
+
+            System.out.println("Binary file converted to CSV successfully.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String convertToCsv(byte[] data) {
+        StringBuilder csvData = new StringBuilder();
+        for (byte b : data) {
+            csvData.append(b).append(",");
+        }
+        return csvData.toString();
+    }
+}
