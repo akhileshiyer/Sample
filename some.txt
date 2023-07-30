@@ -1,0 +1,32 @@
+--Hazelcast
+In Pivotal Cloud Foundry (PCF) or any cloud environment, when using Hazelcast, you typically won't use static IP-based join configurations for forming the Hazelcast cluster. PCF's dynamic nature means that instances of your application can be started and stopped, and IP addresses may change, making it challenging to use static IPs for cluster formation.
+
+Instead, in PCF, it is recommended to use the Hazelcast Auto-Discovery feature for cluster member discovery. The Auto-Discovery mechanism automatically detects and joins other members in the same cluster without requiring you to specify individual IP addresses.
+
+Hazelcast provides various auto-discovery plugins that can integrate with cloud environments like PCF. One common approach is to use the Hazelcast Kubernetes Discovery plugin, which works well in containerized environments like PCF.
+
+To use the Kubernetes Discovery plugin in PCF, you need to:
+
+Include the Hazelcast Kubernetes dependency in your project (e.g., Maven or Gradle):
+
+<!-- For Maven -->
+<dependency>
+    <groupId>com.hazelcast</groupId>
+    <artifactId>hazelcast-kubernetes</artifactId>
+    <version>3.12.12</version> <!-- Replace with the latest version -->
+</dependency>
+Configure Hazelcast to use the Kubernetes Discovery plugin in the hazelcast.yml file:
+
+hazelcast:
+  cluster-name: my-cluster
+  network:
+    join:
+      multicast:
+        enabled: false
+      kubernetes:
+        enabled: true
+Set up the necessary Kubernetes service and metadata to allow the Hazelcast members to discover each other.
+
+With this configuration, when you deploy your Spring Boot application to PCF, the Hazelcast instances will automatically discover and join each other using the Kubernetes Discovery plugin.
+
+Remember that PCF's networking environment may have specific requirements or restrictions. Therefore, always consult your PCF platform team or documentation for any best practices or guidelines related to using Hazelcast in PCF.
