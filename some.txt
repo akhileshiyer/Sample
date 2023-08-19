@@ -30,3 +30,53 @@ Set up the necessary Kubernetes service and metadata to allow the Hazelcast memb
 With this configuration, when you deploy your Spring Boot application to PCF, the Hazelcast instances will automatically discover and join each other using the Kubernetes Discovery plugin.
 
 Remember that PCF's networking environment may have specific requirements or restrictions. Therefore, always consult your PCF platform team or documentation for any best practices or guidelines related to using Hazelcast in PCF.
+
+
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
+@SpringBootTest
+public class MyWebClientComponentTest {
+
+    @Autowired
+    private MyWebClientComponent webClientComponent;
+
+    @MockBean
+    private WebClient.Builder webClientBuilder;
+
+    @Test
+    public void testPerformPostRequestWithHeaders() {
+        WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
+        WebClient.RequestHeadersSpec<?> requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec onStatusResponseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClientBuilder.baseUrl(anyString())).thenReturn(webClientBuilder);
+        when(webClientBuilder.build()).thenReturn(mock(WebClient.class));
+        when(webClientBuilder.build().post()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.header(anyString(), anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.onStatus(any(), any())).thenReturn(onStatusResponseSpec);
+        when(onStatusResponseSpec.toEntity(String.class)).thenReturn(Mono.just(ResponseEntity.ok("Response")));
+
+        // Call the method you want to test
+        Mono<ResponseEntity<String>> responseEntityMono = webClientComponent.performPostRequestWithHeaders();
+
+        // Verify the response entity
+        StepVerifier.create(responseEntityMono)
+            .expectNextMatches(responseEntity ->
+                responseEntity.getStatusCode() == HttpStatus.OK &&
+                responseEntity.getBody().equals("Response")
+            )
+            .verifyComplete();
+    }
+}
